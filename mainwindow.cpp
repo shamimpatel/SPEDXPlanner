@@ -1,9 +1,9 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-//#include
+#include <QKeyEvent>
 
 #include <iostream>
-
+using namespace std;
 
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -20,7 +20,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::on_QuitButton_clicked()
+void MainWindow::keyPressEvent(QKeyEvent *event)
 {
-    //std::cout << RenderWidget->x << std::endl;
+    event->accept();
 }

@@ -1,5 +1,6 @@
 #include "glwidget.h"
 #include <QtGui/QMouseEvent>
+#include <QTimer>
 #include <iostream>
 using namespace std;
 
@@ -9,7 +10,7 @@ GLWidget::GLWidget(QWidget *parent) :
     QGLWidget(parent)
 {
     setMouseTracking(true);
-    bMouseGrabbed = false;
+    bInputGrabbed = false;
     PreviousMousePos = QCursor::pos();
     alpha = 0;
     beta = 0;
@@ -25,10 +26,24 @@ GLWidget::GLWidget(QWidget *parent) :
     UpdateCamera(0.0,0.0);
 }
 
+bool GLWidget::HasGrabbedInput()
+{
+    return bInputGrabbed;
+}
+
+void GLWidget::TestTimer()
+{
+    /*cout << "Timer gone!" << endl;
+    QTimer *Timer;
+    Timer = new QTimer(this);
+    connect(Timer, SIGNAL(timeout()), this, SLOT(TestTimer()));
+    Timer->start(1000);*/
+}
+
 
 void GLWidget::initializeGL() {
 
-    std::cout << glGetString(GL_VERSION) << std::endl;
+    std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << std::endl;
     glEnable(GL_DEPTH_TEST);
     //glEnable(GL_CULL_FACE);
     glDisable(GL_CULL_FACE);
@@ -56,7 +71,7 @@ void GLWidget::resizeGL(int width, int height) {
         height = 1;
     }
     pMatrix.setToIdentity();
-    pMatrix.perspective(60.0, (float) width / (float) height, 0.001, 1000);
+    pMatrix.perspective(60.0, (float) width / (float) height, 0.001f, 1000.0f);
     glViewport(0, 0, width, height);
 
 }
@@ -136,21 +151,21 @@ void GLWidget::MoveCamera(bool forward, bool back, bool left, bool right)
     QVector3D Delta(0,0,0);
     if( forward )
     {
-        Delta += 0.2*CameraDirection;
+        Delta += 0.2f*CameraDirection;
     }
     if( back )
     {
-        Delta -= 0.2*CameraDirection;
+        Delta -= 0.2f*CameraDirection;
     }
 
     QVector3D vLeft = QVector3D::crossProduct(CameraUp,CameraDirection);
     if( left )
     {
-        Delta += 0.2*vLeft;
+        Delta += 0.2f*vLeft;
     }
     if( right )
     {
-        Delta -= 0.2*vLeft;
+        Delta -= 0.2f*vLeft;
     }
 
     MoveCamera(Delta);
@@ -169,10 +184,8 @@ void GLWidget::paintGL() {
     QMatrix4x4 rotMatrix = MakeMatrixRotationYawPitchRoll(theta,0.0,phi);
     CameraDirection = rotMatrix * QVector3D(0,0,1);
     CameraUp    = rotMatrix * QVector3D(0,-1,0);
-
     CameraTarget = CameraPosition + 1.0*CameraDirection;
 
-    //CameraTarget = CameraPosition + 1.0*CameraDirection;
     vMatrix.lookAt(CameraPosition,CameraTarget,CameraUp);
 
     /*cout << "Pos: "; PrintVector(CameraPosition);
@@ -200,35 +213,36 @@ void GLWidget::mousePressEvent(QMouseEvent *event) {
     if(event->button() == Qt::LeftButton &&
        event->buttons() && Qt::LeftButton)
     {
-        //cout << "Click!" << endl;
         int x = event->x();
         int y = event->y();
         if(x >= 0 && x <= width() &&
            y >= 0 && y <= height()  )
         {
-            //cout << pos().x() << "\t" << pos().y() << endl;
             grabMouse();
+            grabKeyboard();
             QPoint p( width()/2, height()/2);
             QCursor::setPos( mapToGlobal(p) );
-            bMouseGrabbed = true;            
+            bInputGrabbed = true;
         }
     }
 }
 
 void GLWidget::mouseMoveEvent(QMouseEvent *event) {
+
     int x = event->x();
     int y = event->y();
     if(x >= 0 && x <= width() &&
        y >= 0 && y <= height()  )
     {
-        if(bMouseGrabbed)
+        if(bInputGrabbed)
         {
             QPoint p( width()/2, height()/2);
             QCursor::setPos( mapToGlobal(p) );
 
-            QPoint Delta = QCursor::pos() - mapToGlobal(p);
-            /*PreviousMousePos = QCursor::pos();
+            QPoint Delta = mapToGlobal(event->pos()) - mapToGlobal(p);
             //cout << Delta.x() << " " << Delta.y() << endl;
+            /*PreviousMousePos = QCursor::pos();
+
             alpha -= Delta.x();
 
             while (alpha < 0)
@@ -259,40 +273,50 @@ void GLWidget::mouseMoveEvent(QMouseEvent *event) {
     {
         //managed to move outside the rendering window
         //probably by moving the mouse too fast
-        if(bMouseGrabbed)
+        if(bInputGrabbed)
         {
             releaseMouse();
-            bMouseGrabbed = false;
+            releaseKeyboard();
+            bInputGrabbed = false;
             cout << "Lost Mouse" << endl;
         }
     }
 }
 
-void GLWidget::keyPressEvent(QKeyEvent* event) {
+void GLWidget::keyPressEvent(QKeyEvent* event)
+{
 
 
-    switch(event->key()) {
+
+
+    switch(event->key())
+    {
     case Qt::Key_Escape:
         releaseMouse();
-        bMouseGrabbed = false;
-        cout << "released!" << endl;
+        releaseKeyboard();
+        bInputGrabbed = false;
+        //cout << "released!" << endl;
         break;
     case Qt::Key_Space:
 
         break;
     case Qt::Key_Up:
+    case Qt::Key_W:
         MoveCamera(true,false,false,false);
         updateGL();
         break;
     case Qt::Key_Down:
+    case Qt::Key_S:
         MoveCamera(false,true,false,false);
         updateGL();
         break;
     case Qt::Key_Left:
+    case Qt::Key_A:
         MoveCamera(false,false,true,false);
         updateGL();
         break;
     case Qt::Key_Right:
+    case Qt::Key_D:
         MoveCamera(false,false,false,true);
         updateGL();
         break;

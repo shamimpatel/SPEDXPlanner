@@ -17,9 +17,10 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
-    
+protected:
+    void keyPressEvent(QKeyEvent *event);
 private slots:
-    void on_QuitButton_clicked();
+
 
 private:
     Ui::MainWindow *ui;

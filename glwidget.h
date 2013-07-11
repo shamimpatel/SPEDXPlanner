@@ -11,11 +11,14 @@ class GLWidget : public QGLWidget
     Q_OBJECT
 public:
     explicit GLWidget(QWidget *parent = 0);
+    bool HasGrabbedInput();
     //int x;
 signals:
     
 public slots:
 
+private slots:
+    void TestTimer();
 
 
 protected:
@@ -26,7 +29,7 @@ protected:
     void mouseMoveEvent(QMouseEvent *event);
     void keyPressEvent(QKeyEvent *event);
 private:
-    bool bMouseGrabbed;
+    bool bInputGrabbed;
     QPoint PreviousMousePos;
     QMatrix4x4 pMatrix;
     QGLShaderProgram shaderProgram;
