@@ -7,7 +7,7 @@
 QT       += core gui
 QT       += opengl
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 5): QT += widgets
 
 TARGET = SPEDXPlanner
 TEMPLATE = app
@@ -23,10 +23,10 @@ HEADERS  += mainwindow.h \
 
 FORMS    += mainwindow.ui
 
-mac: LIBS += -F$$PWD/../../../../Qt5.0.2/5.0.2/clang_64/lib/ -framework QtOpenGL
+mac: LIBS += -F$$PWD/../../../../Qt5.1.0/5.1.0/clang_64/lib/ -framework QtOpenGL
 
-INCLUDEPATH += $$PWD/../../../../Qt5.0.2/5.0.2/clang_64/include
-DEPENDPATH += $$PWD/../../../../Qt5.0.2/5.0.2/clang_64/include
+INCLUDEPATH += $$PWD/../../../../Qt5.1.0/5.1.0/clang_64/include
+DEPENDPATH += $$PWD/../../../../Qt5.1.0/5.1.0/clang_64/include
 
 OTHER_FILES += \
     vertexShader.vsh \
