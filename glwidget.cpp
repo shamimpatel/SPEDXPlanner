@@ -144,22 +144,38 @@ void GLWidget::UpdateCamera(double delta_theta, double delta_phi, double delta_r
 
 */
 
+ //this one has probelms when theta goes < 0  or > 180
+
+    CameraDirection = QVector3D(1,0,0);
+    CameraUp = QVector3D(0,0,1);
 
     QMatrix4x4 rotMatrix;
+
+    theta += delta_theta;
+    phi += delta_phi;
+    roll += delta_roll;
+
+    if(theta > 90) theta = 90;
+    if(theta < -90)   theta = -90;
+
+    if(phi > 360) phi -= 360;
+    if(phi < 0)   phi += 360;
 
 
     QVector3D vLeft = QVector3D::crossProduct(CameraUp,CameraDirection);
     vLeft.normalize();
 
     rotMatrix.setToIdentity();
-    rotMatrix.rotate(delta_theta,vLeft);
+    //rotMatrix.rotate(delta_theta,vLeft);
+    rotMatrix.rotate(theta,vLeft);
 
     CameraDirection = (rotMatrix*CameraDirection).normalized();
     CameraUp        = (rotMatrix*CameraUp).normalized();
 
 
     rotMatrix.setToIdentity();
-    rotMatrix.rotate(delta_phi, QVector3D(0,0,1));
+    //rotMatrix.rotate(delta_phi, QVector3D(0,0,1));
+    rotMatrix.rotate(phi, QVector3D(0,0,1));
 
     CameraDirection = (rotMatrix*CameraDirection).normalized();
     CameraUp        = (rotMatrix*CameraUp).normalized();
@@ -168,7 +184,8 @@ void GLWidget::UpdateCamera(double delta_theta, double delta_phi, double delta_r
     ViewMatrix.setToIdentity();
     ViewMatrix.lookAt(CameraPosition,CameraTarget,CameraUp);
 
-    /*theta += delta_theta;
+/*
+    theta += delta_theta;
     phi += delta_phi;
     roll += delta_roll;
 
@@ -182,10 +199,14 @@ void GLWidget::UpdateCamera(double delta_theta, double delta_phi, double delta_r
     CameraDirection = CreateSphericalVector(1.0, Deg2Rad(theta), Deg2Rad(phi) );
 
     QMatrix4x4 rotMatrix;
-    rotMatrix.rotate(theta, QVector3D(0,1,0));
+
+    QVector3D vLeft = QVector3D::crossProduct(CameraUp,CameraDirection);
+    vLeft.normalize();
+
+    rotMatrix.rotate(theta, vLeft);
     rotMatrix.rotate(phi, QVector3D(0,0,1) );
 
-    CameraUp = rotMatrix*QVector3D(1,0,0);
+    CameraUp = rotMatrix*QVector3D(0,0,0);
 
     CameraTarget    = CameraPosition + 1.0*CameraDirection;
 
