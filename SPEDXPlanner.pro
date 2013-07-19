@@ -15,13 +15,16 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    glwidget.cpp
+    glwidget.cpp \
+    mainrenderwindow.cpp
 
 HEADERS  += mainwindow.h \
     glwidget.h \
-    VectorHelpers.h
+    VectorHelpers.h \
+    mainrenderwindow.h
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    mainrenderwindow.ui
 
 mac: LIBS += -F$$PWD/../../../../Qt5.1.0/5.1.0/clang_64/lib/ -framework QtOpenGL
 
