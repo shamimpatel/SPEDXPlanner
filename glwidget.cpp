@@ -12,13 +12,13 @@ GLWidget::GLWidget(QWidget *parent) :  QGLWidget(parent)
     bInputGrabbed = false;
     PreviousMousePos = QCursor::pos();
 
-    theta = 90;
-    phi =   0;
+    theta = 90.0;
+    phi =   90.0;
     roll = 0;
 
-    CameraPosition = QVector3D(0,0,1.0);
+    /*CameraPosition = QVector3D(0,0,1.0);
     CameraDirection = QVector3D(1,0,0);
-    CameraUp = QVector3D(0,0,1);
+    CameraUp = QVector3D(0,0,1);*/
 
     UpdateCamera(0.0,0.0,0.0);
 
@@ -31,7 +31,6 @@ GLWidget::GLWidget(QWidget *parent) :  QGLWidget(parent)
     setAutoFillBackground(false);
 
     BorderFrame = parent;
-
 }
 
 GLWidget::~GLWidget()
@@ -77,14 +76,7 @@ void GLWidget::initializeGL()
 {
 
     std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << std::endl;
-    /*
-    glEnable(GL_MULTISAMPLE);
 
-    glEnable(GL_DEPTH_TEST);
-    //glEnable(GL_CULL_FACE);
-    glDisable(GL_CULL_FACE);
-    qglClearColor(QColor(Qt::black));
-    */
     shaderProgram.addShaderFromSourceFile(QGLShader::Vertex, ":/vertexShader.vsh");
     shaderProgram.addShaderFromSourceFile(QGLShader::Fragment, ":/fragmentShader.fsh");
     shaderProgram.link();
@@ -104,7 +96,6 @@ void GLWidget::initializeGL()
 
 void GLWidget::resizeGL(int width, int height)
 {
-
     if (height == 0) {
         height = 1;
     }
@@ -112,7 +103,6 @@ void GLWidget::resizeGL(int width, int height)
     ProjectionMatrix.setToIdentity();
     ProjectionMatrix.perspective(60.0, (float) width / (float) height, 0.001f, 1000.0f);
     glViewport(0, 0, width, height);
-
 }
 
 
@@ -157,7 +147,7 @@ void GLWidget::UpdateCamera(double delta_theta, double delta_phi, double delta_r
 
  //this one has probelms when theta goes < 0  or > 180
 
-    CameraDirection = QVector3D(1,0,0);
+    /*CameraDirection = QVector3D(1,0,0); //old and working but theta and phi are a bit odd
     CameraUp = QVector3D(0,0,1);
 
     QMatrix4x4 rotMatrix;
@@ -170,7 +160,26 @@ void GLWidget::UpdateCamera(double delta_theta, double delta_phi, double delta_r
     if(theta < -90)   theta = -90;
 
     if(phi > 360) phi -= 360;
+    if(phi < 0)   phi += 360;*/
+
+
+    CameraDirection = QVector3D(0,0,1); //old and working
+    CameraUp = QVector3D(-1,0,0);
+
+    QMatrix4x4 rotMatrix;
+
+    theta += delta_theta;
+    phi += delta_phi;
+    roll += delta_roll;
+
+    if(theta > 180.0) theta = 180.0;
+    if(theta < 0.0)   theta = 0.0;
+
+    if(phi > 360) phi -= 360;
     if(phi < 0)   phi += 360;
+
+    if(roll > 360) roll -= 360;
+    if(roll < 0)   roll += 360;
 
 
     QVector3D vLeft = QVector3D::crossProduct(CameraUp,CameraDirection);
@@ -263,6 +272,7 @@ void GLWidget::GrabInput(bool bGrab)
         bInputGrabbed = true;
         InputTickTimer->start();
         BorderFrame->setStyleSheet("border: 3px dashed red;");
+        setCursor( QCursor( Qt::BlankCursor ) );
     }
     else
     {
@@ -274,7 +284,8 @@ void GLWidget::GrabInput(bool bGrab)
         SetMovementKey(Backward,false);
         SetMovementKey(Left,false);
         SetMovementKey(Right,false);
-        BorderFrame->setStyleSheet("border: 3px dashed blue;");
+        BorderFrame->setStyleSheet("border: none;");
+        setCursor( QCursor( Qt::ArrowCursor ) );
     }
 }
 
@@ -313,7 +324,6 @@ void GLWidget::PerformCameraMovement()
 
 void GLWidget::paintEvent(QPaintEvent *)
 {
-    //cout <<"Paint event!" << endl;
     makeCurrent();
 
 
@@ -326,6 +336,7 @@ void GLWidget::paintEvent(QPaintEvent *)
 
     int w = width();
     int h = height();
+
     if (h == 0) {
         h = 1;
     }
@@ -334,9 +345,8 @@ void GLWidget::paintEvent(QPaintEvent *)
     ProjectionMatrix.perspective(60.0, (float) w / (float) h, 0.001f, 1000.0f);
     glViewport(0, 0, w, h);
 
-
-
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     QMatrix4x4 ModelMatrix;
     ModelMatrix.translate(QVector3D(0,0,0));
 
@@ -354,76 +364,12 @@ void GLWidget::paintEvent(QPaintEvent *)
     shaderProgram.disableAttributeArray("vertex");
     shaderProgram.release();
 
-    bool bInvertible;
-    QMatrix4x4 vpInverse = (ProjectionMatrix * ViewMatrix).inverted(&bInvertible);
-
-    if(!bInvertible)
-    {
-        cout << "Error: Unable to invert vp matrix" << endl;
-        return;
-    }
-
-    QVector2D AxisScreenOrigin(-0.9,-0.9); //0,0 in screenspace
-
-    QVector4D AxisOrigin(AxisScreenOrigin.x(),AxisScreenOrigin.y(),1.0,1.0);
-    AxisOrigin = vpInverse*AxisOrigin;  //axisorigin is now screenspace(0,0) in worldspace
-
-    QVector4D TempPoint;
 
 
-    QPoint XLabelPos,YLabelPos,ZLabelPos;
-
-    glLineWidth(2.5);
-
-    glBegin(GL_LINES);
-
-    glColor3f(1.0, 0.0, 0.0);
-    TempPoint = AxisOrigin + QVector4D(0.1,0,0,0);
-    TempPoint = mvpMatrix*TempPoint;
-    glVertex3f(AxisScreenOrigin.x(), AxisScreenOrigin.y(), 0.0);
-    glVertex3f(TempPoint.x(), TempPoint.y(), 0);
-
-    XLabelPos = MapFromScreenspaceToLocal(TempPoint.x(),TempPoint.y());
-
-    glColor3f(0.0, 1.0, 0.0);
-    TempPoint = AxisOrigin + QVector4D(0,0.1,0,0);
-    TempPoint = mvpMatrix*TempPoint;
-    glVertex3f(AxisScreenOrigin.x(), AxisScreenOrigin.y(), 0.0);
-    glVertex3f(TempPoint.x(), TempPoint.y(), 0);
+    DrawAxes();
 
 
-    YLabelPos = MapFromScreenspaceToLocal(TempPoint.x(),TempPoint.y());
-
-    glColor3f(0.0, 0.0, 1.0);
-    TempPoint = AxisOrigin + QVector4D(0,0,0.1,0);
-    TempPoint = mvpMatrix*TempPoint;
-    glVertex3f(AxisScreenOrigin.x(), AxisScreenOrigin.y(), 0.0);
-    glVertex3f(TempPoint.x(), TempPoint.y(), 0);
-
-    ZLabelPos = MapFromScreenspaceToLocal(TempPoint.x(),TempPoint.y());
-
-    glEnd();
-
-
-
-    glShadeModel(GL_FLAT);
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_LIGHTING);
-
-    QPen pen(QColor(255,255,255));
-
-    QPainter p(this);
-
-    p.setPen(pen);
-
-
-    p.setRenderHint(QPainter::Antialiasing);
-    p.drawText(XLabelPos,"X");
-    p.drawText(YLabelPos,"Y");
-    p.drawText(ZLabelPos,"Z");
-
-    p.end();
+    doneCurrent();
 }
 
 void GLWidget::mousePressEvent(QMouseEvent *event)
@@ -562,4 +508,74 @@ void GLWidget::keyReleaseEvent(QKeyEvent *event)
         event->ignore();
         break;
     }
+}
+
+void GLWidget::DrawAxes()
+{
+    bool bInvertible;
+    QMatrix4x4 mvMatrix = ProjectionMatrix * ViewMatrix;
+    QMatrix4x4 vpInverse = (ProjectionMatrix * ViewMatrix).inverted(&bInvertible);
+
+    if(!bInvertible)
+    {
+        cout << "Error: Unable to invert view-projection matrix" << endl;
+        return;
+    }
+
+    QVector2D AxisScreenOrigin(-0.9,-0.9);
+
+    QVector4D AxisOrigin(AxisScreenOrigin.x(),AxisScreenOrigin.y(),1.0,1.0);
+    AxisOrigin = vpInverse*AxisOrigin;  //axisorigin is now screenspace(0,0) in worldspace
+
+    QVector4D TempPoint;
+
+    QPoint XLabelPos,YLabelPos,ZLabelPos;
+
+    glLineWidth(2.5);
+
+    glBegin(GL_LINES);
+
+    glColor3f(1.0, 0.0, 0.0);
+    TempPoint = AxisOrigin + QVector4D(0.1,0,0,0);
+    TempPoint = mvMatrix*TempPoint;
+    glVertex3f(AxisScreenOrigin.x(), AxisScreenOrigin.y(), 0.0);
+    glVertex3f(TempPoint.x(), TempPoint.y(), 0);
+
+    XLabelPos = MapFromScreenspaceToLocal(TempPoint.x(),TempPoint.y());
+
+    glColor3f(0.0, 1.0, 0.0);
+    TempPoint = AxisOrigin + QVector4D(0,0.1,0,0);
+    TempPoint = mvMatrix*TempPoint;
+    glVertex3f(AxisScreenOrigin.x(), AxisScreenOrigin.y(), 0.0);
+    glVertex3f(TempPoint.x(), TempPoint.y(), 0);
+
+    YLabelPos = MapFromScreenspaceToLocal(TempPoint.x(),TempPoint.y());
+
+    glColor3f(0.0, 0.0, 1.0);
+    TempPoint = AxisOrigin + QVector4D(0,0,0.1,0);
+    TempPoint = mvMatrix*TempPoint;
+    glVertex3f(AxisScreenOrigin.x(), AxisScreenOrigin.y(), 0.0);
+    glVertex3f(TempPoint.x(), TempPoint.y(), 0);
+
+    ZLabelPos = MapFromScreenspaceToLocal(TempPoint.x(),TempPoint.y());
+
+    glEnd();
+
+    glShadeModel(GL_FLAT);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_LIGHTING);
+
+    QPen pen(QColor(255,255,255));
+
+    QPainter p(this);
+
+    p.setPen(pen);
+
+    p.setRenderHint(QPainter::Antialiasing);
+    p.drawText(XLabelPos,"X");
+    p.drawText(YLabelPos,"Y");
+    p.drawText(ZLabelPos,"Z");
+
+    p.end();
 }

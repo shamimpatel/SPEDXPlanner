@@ -36,6 +36,11 @@ protected:
     void mouseMoveEvent(QMouseEvent *event);
     void keyPressEvent(QKeyEvent *event);
     void keyReleaseEvent(QKeyEvent *event);
+
+
+private:
+    void DrawAxes();
+
 private:
     bool bInputGrabbed;
     QPoint PreviousMousePos;
