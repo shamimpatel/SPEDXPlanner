@@ -6,6 +6,7 @@
 #include <QGLShaderProgram>
 #include <cmath>
 
+
 class GLWidget : public QGLWidget
 {
     Q_OBJECT
@@ -63,6 +64,9 @@ private:
     bool bForwardKey,bBackwardKey,bLeftKey,bRightKey;
     int msPerFrame;
     QTimer *InputTickTimer;
+
+    QWidget* BorderFrame;
+
 private:
     void UpdateCamera(double delta_theta, double delta_phi, double delta_roll);
     void MoveCamera(QVector3D Delta);

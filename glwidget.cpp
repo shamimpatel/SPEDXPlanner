@@ -6,7 +6,6 @@ using namespace std;
 
 #include "VectorHelpers.h"
 
-
 GLWidget::GLWidget(QWidget *parent) :  QGLWidget(parent)
 {
     setMouseTracking(true);
@@ -30,6 +29,9 @@ GLWidget::GLWidget(QWidget *parent) :  QGLWidget(parent)
     InputTickTimer->setInterval(msPerFrame);
     connect(InputTickTimer, SIGNAL(timeout()), this, SLOT(InputTimer()));
     setAutoFillBackground(false);
+
+    BorderFrame = parent;
+
 }
 
 GLWidget::~GLWidget()
@@ -260,6 +262,7 @@ void GLWidget::GrabInput(bool bGrab)
         QCursor::setPos( mapToGlobal(p) );
         bInputGrabbed = true;
         InputTickTimer->start();
+        BorderFrame->setStyleSheet("border: 3px dashed red;");
     }
     else
     {
@@ -271,6 +274,7 @@ void GLWidget::GrabInput(bool bGrab)
         SetMovementKey(Backward,false);
         SetMovementKey(Left,false);
         SetMovementKey(Right,false);
+        BorderFrame->setStyleSheet("border: 3px dashed blue;");
     }
 }
 
