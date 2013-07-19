@@ -3,7 +3,7 @@
 
 #include <QMainWindow>
 
-class GLWidget;
+class MainRenderWindow;
 
 
 namespace Ui {
@@ -19,12 +19,16 @@ public:
     ~MainWindow();
 protected:
     void keyPressEvent(QKeyEvent *event);
+
+public slots:
+    void show();
 private slots:
 
+    void on_actionShow_Render_Window_triggered();
 
 private:
     Ui::MainWindow *ui;
-    GLWidget *RenderWidget;
+    MainRenderWindow *RenderWindow;
 };
 
 #endif // MAINWINDOW_H
