@@ -11,6 +11,7 @@ class GLWidget : public QGLWidget
     Q_OBJECT
 public:
     explicit GLWidget(QWidget *parent = 0);
+    ~GLWidget();
     bool HasGrabbedInput();
 
     QPoint MapFromScreenspaceToLocal(double x, double y);

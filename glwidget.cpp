@@ -32,6 +32,15 @@ GLWidget::GLWidget(QWidget *parent) :  QGLWidget(parent)
     setAutoFillBackground(false);
 }
 
+GLWidget::~GLWidget()
+{
+    vertices.clear();
+    vertices.squeeze();
+    VertexColours.clear();
+    VertexColours.squeeze();
+}
+
+
 bool GLWidget::HasGrabbedInput()
 {
     return bInputGrabbed;
