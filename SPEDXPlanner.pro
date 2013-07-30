@@ -16,12 +16,21 @@ TEMPLATE = app
 SOURCES += main.cpp\
         mainwindow.cpp \
     glwidget.cpp \
-    mainrenderwindow.cpp
+    mainrenderwindow.cpp \
+    crystal.cpp \
+    crystallography.cpp \
+    spectrum.cpp \
+    geometry.cpp
 
 HEADERS  += mainwindow.h \
     glwidget.h \
     VectorHelpers.h \
-    mainrenderwindow.h
+    mainrenderwindow.h \
+    crystal.h \
+    crystallography.h \
+    Utils.h \
+    spectrum.h \
+    geometry.h
 
 FORMS    += mainwindow.ui \
     mainrenderwindow.ui

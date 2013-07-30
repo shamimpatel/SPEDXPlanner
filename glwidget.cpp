@@ -522,7 +522,7 @@ void GLWidget::DrawAxes()
         return;
     }
 
-    QVector2D AxisScreenOrigin(-0.9,-0.9);
+    QVector2D AxisScreenOrigin(-0.9f,-0.9f);
 
     QVector4D AxisOrigin(AxisScreenOrigin.x(),AxisScreenOrigin.y(),1.0,1.0);
     AxisOrigin = vpInverse*AxisOrigin;  //axisorigin is now screenspace(0,0) in worldspace
@@ -536,7 +536,7 @@ void GLWidget::DrawAxes()
     glBegin(GL_LINES);
 
     glColor3f(1.0, 0.0, 0.0);
-    TempPoint = AxisOrigin + QVector4D(0.1,0,0,0);
+    TempPoint = AxisOrigin + QVector4D(0.1f,0,0,0);
     TempPoint = mvMatrix*TempPoint;
     glVertex3f(AxisScreenOrigin.x(), AxisScreenOrigin.y(), 0.0);
     glVertex3f(TempPoint.x(), TempPoint.y(), 0);
@@ -544,7 +544,7 @@ void GLWidget::DrawAxes()
     XLabelPos = MapFromScreenspaceToLocal(TempPoint.x(),TempPoint.y());
 
     glColor3f(0.0, 1.0, 0.0);
-    TempPoint = AxisOrigin + QVector4D(0,0.1,0,0);
+    TempPoint = AxisOrigin + QVector4D(0,0.1f,0,0);
     TempPoint = mvMatrix*TempPoint;
     glVertex3f(AxisScreenOrigin.x(), AxisScreenOrigin.y(), 0.0);
     glVertex3f(TempPoint.x(), TempPoint.y(), 0);
@@ -552,7 +552,7 @@ void GLWidget::DrawAxes()
     YLabelPos = MapFromScreenspaceToLocal(TempPoint.x(),TempPoint.y());
 
     glColor3f(0.0, 0.0, 1.0);
-    TempPoint = AxisOrigin + QVector4D(0,0,0.1,0);
+    TempPoint = AxisOrigin + QVector4D(0,0,0.1f,0);
     TempPoint = mvMatrix*TempPoint;
     glVertex3f(AxisScreenOrigin.x(), AxisScreenOrigin.y(), 0.0);
     glVertex3f(TempPoint.x(), TempPoint.y(), 0);
