@@ -1,6 +1,5 @@
 #include "crystal.h"
 
-
 Crystal::Crystal()
 {
     LatticeConstant = 3.31f;

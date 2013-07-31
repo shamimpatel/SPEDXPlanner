@@ -1,11 +1,12 @@
 #ifndef CRYSTALLOGRAPHY_H
 #define CRYSTALLOGRAPHY_H
 #include <QTextEdit>
+#include <QStandardItemModel>
 
 class Crystal;
 class Backlighter;
 class Detector;
-struct Spectrum;
+class Spectrum;
 class Geometry;
 
 struct LatticePlane
@@ -38,9 +39,10 @@ public:
     void SetSpectrum(Spectrum* BacklighterSpectrum);
     void SetGeometry(Geometry* ExptGeometry);
 
-    void CalculateDiffractionSpectrum(QTextEdit* TempOutput);
+    void CalculateDiffractionSpectrum(QStandardItemModel* model, QTextEdit* TempOutput);
     bool CheckSymmetry(LatticePlane *P);
     bool isPlaneBCC( LatticePlane* Plane);
+    bool isPlaneFCC( LatticePlane* Plane);
 
 private:
     bool isPlaneWithinEnergyRange(LatticePlane* Plane);

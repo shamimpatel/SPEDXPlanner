@@ -53,6 +53,11 @@ bool Crystallography::isPlaneBCC( LatticePlane* Plane)
     }
 }
 
+bool Crystallography::isPlaneFCC(LatticePlane *Plane)
+{
+    return (Plane->h%2 == Plane->k%2) && (Plane->h%2 == Plane->l%2);
+}
+
 bool Crystallography::isPlaneWithinEnergyRange(LatticePlane* Plane)
 {
     if(!Target)
@@ -64,8 +69,8 @@ bool Crystallography::isPlaneWithinEnergyRange(LatticePlane* Plane)
     float MinDiffractWavelength,MaxDiffractWavelength;
     GetWavelengthRangeForPlane(Plane, MinDiffractWavelength, MaxDiffractWavelength);
 
-    float MinE = BacklighterSpectrum->MinE;
-    float MaxE = BacklighterSpectrum->MaxE;
+    float MinE = BacklighterSpectrum->GetMinE();
+    float MaxE = BacklighterSpectrum->GetMaxE();
 
     float MinSourceWavelength = EnergyToWavelength(MaxE);
     float MaxSourceWavelength = EnergyToWavelength(MinE);
@@ -118,7 +123,7 @@ void Crystallography::GetWavelengthRangeForPlane(LatticePlane *Plane, float &Min
     MaxWavelength = 2.0f*d*sin(MaxBraggTheta);
 }
 
-void Crystallography::CalculateDiffractionSpectrum(QTextEdit* TempOutput)
+void Crystallography::CalculateDiffractionSpectrum(QStandardItemModel* model, QTextEdit* TempOutput)
 {
     if(!Target)
     {
@@ -126,8 +131,8 @@ void Crystallography::CalculateDiffractionSpectrum(QTextEdit* TempOutput)
         return;
     }
 
-    float MinE = BacklighterSpectrum->MinE;
-    float MaxE = BacklighterSpectrum->MaxE;
+    float MinE = BacklighterSpectrum->GetMinE();
+    float MaxE = BacklighterSpectrum->GetMaxE();
 
     float MaxBraggTheta = Deg2Rad( ExptGeometry->GetMaxBraggAngle() );
     float SinBraggTheta = sin(MaxBraggTheta);
@@ -202,11 +207,26 @@ void Crystallography::CalculateDiffractionSpectrum(QTextEdit* TempOutput)
 
 
     TempOutput->clear();
-    cout << "Valid Planes:" << endl;
-    TempOutput->append("Valid Planes:");
+    QString OutputLine("Valid Planes (");
+    OutputLine += QString::number(hklPlanes.size()); OutputLine.append("):");
+    cout << OutputLine.toStdString() << endl;
+    TempOutput->append(OutputLine);
 
     std::sort(hklPlanes.begin(), hklPlanes.end(), LatticePlane::LatticePlaneCompare);
 
+    model->insertColumn(0); //one for x data
+    model->insertColumn(0); //one for y data
+
+    model->setHeaderData(0,Qt::Horizontal,"X");
+    model->setHeaderData(1,Qt::Horizontal,"Y");
+
+    for( int i = 0; i < hklPlanes.size(); i++)
+    {
+        model->insertRow(0); //three for each plane
+        model->insertRow(0); //three for each plane
+        model->insertRow(0); //three for each plane
+    }
+    int row = 0;
     for( auto it = hklPlanes.begin(); it != hklPlanes.end(); ++it)
     {
         float MinWavelength, MaxWavelength, MinE, MaxE;
@@ -214,7 +234,7 @@ void Crystallography::CalculateDiffractionSpectrum(QTextEdit* TempOutput)
         GetWavelengthRangeForPlane(&P, MinWavelength, MaxWavelength);
         MinE = EnergyToWavelength(MaxWavelength);
         MaxE = EnergyToWavelength(MinWavelength);
-        QString OutputLine;
+        OutputLine = "";
         OutputLine += QString::number(P.h); OutputLine += " ";
         OutputLine += QString::number(P.k); OutputLine += " ";
         OutputLine += QString::number(P.l); OutputLine += "\t";
@@ -223,6 +243,24 @@ void Crystallography::CalculateDiffractionSpectrum(QTextEdit* TempOutput)
         //cout << P.h << " " << P.k << " " << P.l << " " << MinE << " --> " << MaxE << endl;
         cout << OutputLine.toStdString(); cout << endl;
         TempOutput->append(OutputLine);
+
+        model->setData(model->index(row,0),MinE);
+        model->setData(model->index(row,1),0);
+        model->setData(model->index(row,1),QColor(255,0,0),Qt::DecorationRole);
+
+        row++;
+
+        model->setData(model->index(row,0),float( (MinE+MaxE)/2.0) );
+        model->setData(model->index(row,1),P.M);
+        model->setData(model->index(row,1),QColor(255,0,0),Qt::DecorationRole);
+
+        row++;
+
+        model->setData(model->index(row,0),MaxE);
+        model->setData(model->index(row,1),0);
+        model->setData(model->index(row,1),QColor(255,0,0),Qt::DecorationRole);
+
+        row++;
     }
 }
 
@@ -237,8 +275,16 @@ bool Crystallography::CheckSymmetry(LatticePlane* P)
     Crystal::Symmetry CrystalSymmetry = Target->GetSymmetry();
 
     switch (CrystalSymmetry)
-    case Crystal::Symmetry::CUBIC_BCC:
-        return isPlaneBCC(P);
+    {
+        case Crystal::Symmetry::CUBIC_BCC:
+            return isPlaneBCC(P);
+            break;
+        case Crystal::Symmetry::CUBIC_FCC:
+            return isPlaneFCC(P);
+            break;
+        default:
+            return false;
+    }
 
     return false;
 }

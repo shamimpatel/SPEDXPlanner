@@ -15,21 +15,51 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    RenderWindow = new MainRenderWindow(this);    
+    /*scene = new QGraphicsScene;
+    ui->ChartArea->setScene(scene);*/
+    model=new QStandardItemModel(0,2,this);
+
+    RenderWindow = new MainRenderWindow(this);
     RenderWindow->setWindowFlags(Qt::Window);
 
     ui->LatticeConstantInput->setText("3.31");
     TempCrystal.SetLatticeConstant(3.31f);
+    TempCrystal.SetSymmetry(Crystal::Symmetry::CUBIC_BCC);
 
-    BacklighterSpectrum.MinE = 3.0f;
-    BacklighterSpectrum.MaxE = 9.0f;
+    ui->SymmetrySelector->addItem("BCC", int(Crystal::Symmetry::CUBIC_BCC));
+    ui->SymmetrySelector->addItem("FCC", int(Crystal::Symmetry::CUBIC_FCC));
+
+    BacklighterSpectrum.SetMinE( 3.0f );
+    BacklighterSpectrum.SetMaxE( 9.0f );
+
+    ui->tabWidget->setCurrentIndex(1);
+
+    ui->chart->setModel(model);
+    ui->chart->setting().border().setRight(10);
+    ui->chart->setting().border().setLeft(40);
+    ui->chart->setting().border().setBottom(40);
+    ui->chart->setting().border().setBackgroundColor(QColor(255,255,255));
+
+    ui->chart->setting().grid().horizontalTick().setTickMajor(10);
+    ui->chart->setting().grid().horizontalTick().setTickMinor(4);
+    ui->chart->setting().grid().verticalTick().setTickMajor(5);
+    ui->chart->setting().grid().verticalTick().setTickMinor(4);
+    ui->chart->setting().grid().setBackgroundColor(QColor(255,255,255));
+    ui->chart->setting().grid().setForegroundColor(QColor(0,0,0));
+    //ui->chart->setting().scale().
+    //ui->chart->setting().scale().setAutoCurrentLimit(true);
+    //ui->chart->setting().scale().setNominalAutoLimit(true);
+    ui->chart->updateChart();
+    UpdateCrystallography();
 }
 
 MainWindow::~MainWindow()
 {
     releaseMouse();
     releaseKeyboard();
-    delete ui;    
+    delete ui;
+    delete model;
+    //delete scene;
 }
 
 void MainWindow::keyPressEvent(QKeyEvent *event)
@@ -44,6 +74,11 @@ void MainWindow::show()
     //RenderWindow->raise();
 }
 
+void MainWindow::resizeEvent(QResizeEvent *)
+{
+
+}
+
 
 void MainWindow::on_actionShow_Render_Window_triggered()
 {
@@ -56,19 +91,16 @@ void MainWindow::on_LatticeConstantInput_textChanged(const QString &arg1)
 {     
     bool bConvertedProperly;
     float a0 = CheckNumericalInput(ui->LatticeConstantInput,arg1,&bConvertedProperly);
-    if(bConvertedProperly)
+    if(bConvertedProperly && a0 >= 0)
     {
         TempCrystal.SetLatticeConstant(a0);
+        UpdateCrystallography();
     }
 }
 
 void MainWindow::on_pushButton_pressed()
 {
-    Crystallography C;
-    C.SetTarget(&TempCrystal);
-    C.SetSpectrum(&BacklighterSpectrum);
-    C.SetGeometry(&ExptGeometry);
-    C.CalculateDiffractionSpectrum(ui->TempOutput);
+    UpdateCrystallography();
 }
 
 float MainWindow::CheckNumericalInput(QLineEdit *LineEdit, const QString &text, bool *bConverted)
@@ -90,9 +122,10 @@ void MainWindow::on_MinEnergyInput_textChanged(const QString &arg1)
 {
     bool bConvertedProperly;
     float MinE = CheckNumericalInput(ui->MinEnergyInput,arg1,&bConvertedProperly);
-    if(bConvertedProperly)
+    if(bConvertedProperly && MinE >= 0)
     {
-        BacklighterSpectrum.MinE = MinE;
+        BacklighterSpectrum.SetMinE(MinE);
+        UpdateCrystallography();
     }
 }
 
@@ -100,9 +133,10 @@ void MainWindow::on_MaxEnergyInput_textChanged(const QString &arg1)
 {
     bool bConvertedProperly;
     float MaxE = CheckNumericalInput(ui->MaxEnergyInput,arg1,&bConvertedProperly);
-    if(bConvertedProperly)
+    if(bConvertedProperly && MaxE > 0)
     {
-        BacklighterSpectrum.MaxE = MaxE;
+        BacklighterSpectrum.SetMaxE(MaxE);
+        UpdateCrystallography();
     }
 }
 
@@ -110,9 +144,10 @@ void MainWindow::on_MinBraggAngleInput_textChanged(const QString &arg1)
 {
     bool bConvertedProperly;
     float Angle = CheckNumericalInput(ui->MinBraggAngleInput,arg1,&bConvertedProperly);
-    if(bConvertedProperly)
+    if(bConvertedProperly && Angle >= 0)
     {
         ExptGeometry.OverrideMinBraggAngle(Angle);
+        UpdateCrystallography();
     }
 }
 
@@ -120,13 +155,47 @@ void MainWindow::on_MaxBraggAngleInput_textChanged(const QString &arg1)
 {
     bool bConvertedProperly;
     float Angle = CheckNumericalInput(ui->MaxBraggAngleInput,arg1,&bConvertedProperly);
-    if(bConvertedProperly)
+    if(bConvertedProperly && Angle >= 0)
     {
         ExptGeometry.OverrideMaxBraggAngle(Angle);
+        UpdateCrystallography();
     }
 }
 
 void MainWindow::on_actionExit_triggered()
 {
     QApplication::quit();
+}
+
+void MainWindow::on_SymmetrySelector_currentIndexChanged(int index)
+{
+    bool bOk;
+    QVariant Data = ui->SymmetrySelector->itemData(index);
+    Crystal::Symmetry Symmetry = (Crystal::Symmetry)Data.toInt(&bOk);
+    if(!bOk)
+    {
+        cout << "Could not convert properly." << endl;
+        return;
+    }
+    TempCrystal.SetSymmetry(Symmetry);
+    UpdateCrystallography();
+}
+
+void MainWindow::UpdateCrystallography()
+{
+    model->clear();
+
+    Crystallography C;
+    C.SetTarget(&TempCrystal);
+    C.SetSpectrum(&BacklighterSpectrum);
+    C.SetGeometry(&ExptGeometry);
+    C.CalculateDiffractionSpectrum(model, ui->TempOutput);
+
+    int MinE = floor(BacklighterSpectrum.GetMinE() + 0.5);
+    int MaxE = floor(BacklighterSpectrum.GetMaxE() + 0.5);
+
+    int NumTicks = 1.0*(MaxE - MinE) + 1;
+    ui->chart->setting().grid().horizontalTick().setTickMajor(NumTicks);
+    ui->chart->setting().scale().setCurrentLimit(ChartXYLimit(ChartXYLimitAxis(float(MinE),float(MaxE)),ChartXYLimitAxis(0,50)));
+    ui->chart->updateChart();
 }

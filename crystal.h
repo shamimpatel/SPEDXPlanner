@@ -6,10 +6,11 @@ class Crystal
 public:
     enum Symmetry
     {
-        CUBIC_BCC,
-        CUBIC_FCC,
+        CUBIC_BCC = 0,
+        CUBIC_FCC = 1,
         NONE
     };
+
 
 
 public:

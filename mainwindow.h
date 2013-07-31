@@ -5,10 +5,11 @@
 #include "crystal.h"
 #include "spectrum.h"
 #include "geometry.h"
-
+#include <QStandardItemModel>
 
 class MainRenderWindow;
 class QLineEdit;
+class QGraphicsScene;
 
 namespace Ui {
 class MainWindow;
@@ -23,7 +24,7 @@ public:
     ~MainWindow();
 protected:
     void keyPressEvent(QKeyEvent *event);
-
+    void resizeEvent(QResizeEvent *);
 public slots:
     void show();
 private slots:
@@ -46,12 +47,18 @@ private slots:
 
     void on_actionExit_triggered();
 
+    void on_SymmetrySelector_currentIndexChanged(int index);
+
+public:
+    void UpdateCrystallography();
+
 private:
     Crystal TempCrystal;
     Spectrum BacklighterSpectrum;
     Geometry ExptGeometry;
     Ui::MainWindow *ui;
     MainRenderWindow *RenderWindow;
+    QStandardItemModel *model;
 };
 
 #endif // MAINWINDOW_H
